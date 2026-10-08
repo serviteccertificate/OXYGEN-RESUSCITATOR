@@ -88,7 +88,7 @@
   .sign{display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:22px;text-align:center;font-weight:bold;font-size:12px;}
   .sign .line{margin:34px auto 4px;}
   .sign input{text-align:center;}
-  .sign input.namefld{display:inline-block;width:16ch;min-width:6ch;max-width:95%;text-align:center;}
+  .sign input.namefld{display:inline-block;width:16ch;min-width:6ch;max-width:95%;text-align:center;padding:3px 6px;}
   .sign .role{margin-top:2px;}
   .sign .role select.rolesel{
     border:0;background:transparent;font:inherit;font-size:inherit;font-weight:bold;
@@ -388,6 +388,22 @@
   var KEY="medical_oxygen_cert_data";
   var saveTimer=null;
 
+  /* auto-size the inspector / approver name boxes to fit the typed name */
+  var __mctx=null;
+  function fitName(el){
+    if(!el)return;
+    try{
+      if(!__mctx)__mctx=document.createElement('canvas').getContext('2d');
+      var cs=getComputedStyle(el);
+      __mctx.font=cs.fontStyle+' '+cs.fontWeight+' '+cs.fontSize+' '+cs.fontFamily;
+      var txt=(el.value||'').toUpperCase();
+      var pad=parseFloat(cs.paddingLeft)+parseFloat(cs.paddingRight)+parseFloat(cs.borderLeftWidth)+parseFloat(cs.borderRightWidth)+6;
+      var w=txt?Math.ceil(__mctx.measureText(txt).width+pad):0;
+      el.style.width=txt?(w+'px'):'16ch';
+    }catch(e){}
+  }
+  function fitNames(){fitName(document.getElementById('f_insp_name'));fitName(document.getElementById('f_appr_name'));}
+
   function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 
   /* ---- ROWS ---- */
@@ -542,6 +558,7 @@
     if(d.fields)FIELDS.forEach(function(f){var el=document.getElementById(f);if(el&&d.fields[f]!=null)el.value=d.fields[f];});
     var body=document.getElementById('rows');body.innerHTML='';
     (d.rows&&d.rows.length?d.rows:[{},{},{},{},{},{},{}]).forEach(function(r){body.appendChild(makeRow(r));});
+    fitNames();
     var auto=!(d.opt&&d.opt.auto===false);
     var ab=document.getElementById('opt_auto');if(ab)ab.checked=auto;syncManual();
     applyBreaks();
@@ -773,7 +790,7 @@
     if(!confirm('ล้างข้อมูลทั้งหมด?'))return;
     FIELDS.forEach(function(f){var el=document.getElementById(f);if(el)el.value='';});
     setYearDefaults();
-    document.getElementById('rows').innerHTML='';addRow(7);scheduleSave();
+    document.getElementById('rows').innerHTML='';addRow(7);fitNames();scheduleSave();
   }
 
   /* ---------- CLOUD DASHBOARD (Google Sheet) ---------- */
@@ -926,7 +943,7 @@
     document.getElementById('editRowBadge').style.display='none';
     FIELDS.forEach(function(f){var el=document.getElementById(f);if(el)el.value='';});
     setYearDefaults();
-    document.getElementById('rows').innerHTML='';addRow(7);
+    document.getElementById('rows').innerHTML='';addRow(7);fitNames();
     cstatus('ฟอร์มใหม่พร้อมแล้ว ✓');
     closeCertList();window.scrollTo(0,0);
   }
@@ -947,11 +964,14 @@
       }
     },true);
     FIELDS.forEach(function(f){var el=document.getElementById(f);if(el)el.addEventListener(el.tagName==='SELECT'?'change':'input',scheduleSave);});
+    ['f_insp_name','f_appr_name'].forEach(function(id){var el=document.getElementById(id);if(el)el.addEventListener('input',function(){fitName(el);});});
+    window.addEventListener('beforeprint',fitNames);
     syncManual();
     window.__editRow=null;
     if(getCloudUrl())cstatus('เชื่อมต่อ Google Sheet แล้ว ✓');
     var loaded=await loadStore();
     if(!loaded){setYearDefaults();addRow(7);}
+    fitNames();
 
     try{
       var qs=new URLSearchParams(location.search);
