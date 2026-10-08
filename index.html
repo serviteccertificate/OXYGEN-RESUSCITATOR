@@ -61,6 +61,7 @@
   }
   input:focus,textarea:focus,select:focus{outline:2px solid #2563eb;background:#fff;}
   #sheet input,#sheet textarea,#sheet select{text-transform:uppercase;}
+  #sheet input[data-col="workingpressure"]{text-transform:none;}
   .statement{font-weight:bold;font-size:11.5px;margin:8px 0 4px;}
 
   /* checklist table */
@@ -407,7 +408,8 @@
     cols.forEach(function(o){
       var td=document.createElement('td');
       var la=o.list?(' list="'+o.list+'"'):'';
-      td.innerHTML='<input data-col="'+o.c+'"'+la+' autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="characters">';
+      var cap=(o.c==='workingpressure')?'off':'characters';
+      td.innerHTML='<input data-col="'+o.c+'"'+la+' autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="'+cap+'">';
       tr.appendChild(td);
     });
     var tDel=document.createElement('td');tDel.className='delcell no-print';
@@ -421,7 +423,7 @@
       var c=el.getAttribute('data-col');
       if(data[c]!=null)el.value=data[c];
       el.addEventListener('input',scheduleSave);
-      el.addEventListener('input',function(){var p=el.selectionStart;el.value=el.value.toUpperCase();try{el.setSelectionRange(p,p);}catch(e){}});
+      if(c!=='workingpressure')el.addEventListener('input',function(){var p=el.selectionStart;el.value=el.value.toUpperCase();try{el.setSelectionRange(p,p);}catch(e){}});
     });
     return tr;
   }
@@ -936,6 +938,7 @@
       var el=e.target;
       if(!el||(el.tagName!=='INPUT'&&el.tagName!=='TEXTAREA'))return;
       if(el.type==='number'||el.type==='url'||el.type==='email')return;
+      if(el.getAttribute('data-col')==='workingpressure')return;
       var up=(el.value||'').toUpperCase();
       if(up!==el.value){
         var s=el.selectionStart,en=el.selectionEnd;
